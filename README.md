@@ -92,23 +92,8 @@ When presenting to the instructor, use this clear division of responsibility:
 
 ---
 
-## 4. Viva / Defense Questions & Prepared Answers
 
-### Q1: *"How does your app prevent an incomplete team from starting?"*
-> **Answer**:  
-> In `app.js`, the `handleStartNewMatch()` method inspects the roster length of both selected teams. If either team has fewer than `minTeamSize` (default: 2 for demo, up to 11 for standard), match creation is halted with an alert prompt instructing the scorer to add more players.
-
-### Q2: *"Why does a Wide or No-ball not count as a legal ball?"*
-> **Answer**:  
-> In `engine.js`, `isLegalBall` is evaluated as `extraType !== 'wide' && extraType !== 'no_ball'`. Only when `isLegalBall === true` does `innings.legalBalls` increment. Therefore, an over only finishes when exactly 6 legal balls have been bowled.
-
-### Q3: *"How is bowler credit assigned for wickets?"*
-> **Answer**:  
-> The `processDelivery()` method tests the dismissal type. If the dismissal is `bowled`, `caught`, `lbw`, `stumped`, or `hit_wicket`, `bowlerCredited = true` and the bowler's wicket tally increments. If the dismissal is `run_out`, `bowlerCredited = false`: the batting team loses a wicket, but the bowler is not credited.
-
----
-
-## 5. How to Run the App in VS Code
+## 4. How to Run the App in VS Code
 
 1. Open **VS Code**.
 2. Click **File ➔ Open Folder...** and select:  
