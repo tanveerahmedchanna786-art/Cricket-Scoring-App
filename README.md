@@ -80,20 +80,7 @@ By treating each ball as an immutable **`Delivery`** event:
 
 ---
 
-## 3. Project Division for the 3 Group Members
-
-When presenting to the instructor, use this clear division of responsibility:
-
-| Student | Assigned Module | Key Components Explained |
-| :--- | :--- | :--- |
-| **Student 1** | **Cricket Rule Engine & State Logic** (`engine.js`) | Strike rotation on odd runs & over end, legal ball filtering (wide/no-ball), consecutive over bowler validation, and innings conclusion conditions. |
-| **Student 2** | **Entity Modeling & Local Storage** (`models.js`, `storage.js`) | The 7 entity classes, Event Sourcing via `Delivery` records, the `Undo` recomputation algorithm, and offline `localStorage` persistence. |
-| **Student 3** | **UI/UX & Demonstration Module** (`app.js`, `index.html`, `demo.js`) | Responsive mobile design, over ball strip pills, modal flows (wicket selection & bowler assignment), scorecard export, and the Viva demo runner. |
-
----
-
-
-## 4. How to Run the App in VS Code
+## 3. How to Run the App in VS Code
 
 1. Open **VS Code**.
 2. Click **File ➔ Open Folder...** and select:  
