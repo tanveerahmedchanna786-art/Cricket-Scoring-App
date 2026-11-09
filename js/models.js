@@ -1,35 +1,33 @@
 /**
  * models.js - Core Entities for Cricket Scoring Application (EF101-P02)
+ * Enhanced with:
+ * - Team flags, jerseys, and theme colors
+ * - Delivery shot zones (Wagon Wheel) and automated commentary
+ * - Player of the Match (MVP) performance points
  */
 
 class Player {
-  constructor(id, name, role = 'All-Rounder') {
+  constructor(id, name, role = 'All-Rounder', battingStyle = 'Right-Hand Bat', bowlingStyle = 'Right-Arm Fast') {
     this.id = id || 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
     this.name = name.trim();
-    this.role = role;
+    this.role = role; // 'Batter' | 'Bowler' | 'All-Rounder' | 'Wicketkeeper'
+    this.battingStyle = battingStyle;
+    this.bowlingStyle = bowlingStyle;
   }
 }
 
 class Team {
-  constructor(id, name, players = []) {
+  constructor(id, name, players = [], flag = '🏏', primaryColor = '#00e676') {
     this.id = id || 'team_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
     this.name = name.trim();
+    this.flag = flag;
+    this.primaryColor = primaryColor;
     this.players = (players || []).map(p => (p instanceof Player ? p : new Player(p.id, p.name, p.role)));
   }
 
   addPlayer(player) {
     if (!this.players.some(p => p.id === player.id || p.name.toLowerCase() === player.name.toLowerCase())) {
       this.players.push(player instanceof Player ? player : new Player(player.id, player.name, player.role));
-      return true;
-    }
-    return false;
-  }
-
-  editPlayer(playerId, newName, newRole) {
-    const player = this.players.find(p => p.id === playerId);
-    if (player) {
-      if (newName && newName.trim()) player.name = newName.trim();
-      if (newRole) player.role = newRole;
       return true;
     }
     return false;
@@ -49,14 +47,15 @@ class Delivery {
     nonStrikerId,
     bowlerId,
     runsScored = 0,
-    extraType = 'none',
+    extraType = 'none', // 'none' | 'wide' | 'no_ball' | 'bye' | 'leg_bye'
     extraRuns = 0,
     isLegalBall = true,
     isWicket = false,
-    dismissalType = null,
+    dismissalType = null, // 'bowled' | 'caught' | 'lbw' | 'stumped' | 'run_out' | 'hit_wicket'
     dismissedPlayerId = null,
     bowlerCredited = false,
-    shotAngle = null,
+    shotZone = null, // 'long_off' | 'long_on' | 'cover' | 'point' | 'midwicket' | 'fine_leg' | 'third_man' | 'straight'
+    commentary = '',
     notes = ''
   }) {
     this.id = 'del_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -74,7 +73,8 @@ class Delivery {
     this.dismissalType = dismissalType;
     this.dismissedPlayerId = dismissedPlayerId;
     this.bowlerCredited = bowlerCredited;
-    this.shotAngle = shotAngle;
+    this.shotZone = shotZone;
+    this.commentary = commentary;
     this.notes = notes;
     this.timestamp = Date.now();
   }
@@ -119,6 +119,16 @@ class BatterInnings {
     if (this.ballsFaced === 0) return '0.00';
     return ((this.runs / this.ballsFaced) * 100).toFixed(1);
   }
+
+  // MVP Impact Points
+  get mvpPoints() {
+    let pts = this.runs;
+    pts += this.fours * 2.5;
+    pts += this.sixes * 5;
+    if (this.runs >= 50) pts += 20;
+    if (this.runs >= 30) pts += 10;
+    return pts;
+  }
 }
 
 class BowlerSpell {
@@ -144,10 +154,27 @@ class BowlerSpell {
     const oversDecimal = this.legalBalls / 6;
     return (this.runsConceded / oversDecimal).toFixed(2);
   }
+
+  // MVP Impact Points
+  get mvpPoints() {
+    let pts = this.wickets * 25;
+    pts += this.maidens * 15;
+    if (this.legalBalls >= 6) {
+      const econ = parseFloat(this.economyRate);
+      if (econ < 6.0) pts += 15;
+      else if (econ < 8.0) pts += 5;
+    }
+    return pts;
+  }
 }
 
 class Innings {
-  constructor({ inningsNumber = 1, battingTeam, bowlingTeam, target = null }) {
+  constructor({
+    inningsNumber = 1,
+    battingTeam,
+    bowlingTeam,
+    target = null
+  }) {
     this.inningsNumber = inningsNumber;
     this.battingTeam = battingTeam;
     this.bowlingTeam = bowlingTeam;
@@ -158,7 +185,14 @@ class Innings {
     this.isCompleted = false;
     this.completionReason = '';
 
-    this.extras = { wides: 0, noBalls: 0, byes: 0, legByes: 0, total: 0 };
+    this.extras = {
+      wides: 0,
+      noBalls: 0,
+      byes: 0,
+      legByes: 0,
+      total: 0
+    };
+
     this.currentStrikerId = null;
     this.currentNonStrikerId = null;
     this.currentBowlerId = null;
@@ -189,7 +223,6 @@ class Match {
     date = new Date().toISOString().split('T')[0],
     venue = 'National Stadium',
     totalOvers = 5,
-    format = 'Custom',
     team1,
     team2,
     tossWinnerId,
@@ -200,7 +233,6 @@ class Match {
     this.date = date;
     this.venue = venue;
     this.totalOvers = parseInt(totalOvers, 10) || 5;
-    this.format = format;
     this.team1 = team1;
     this.team2 = team2;
     this.tossWinnerId = tossWinnerId;
@@ -215,6 +247,42 @@ class Match {
 
   getCurrentInnings() {
     return this.inningsList[this.currentInningsIndex] || null;
+  }
+
+  // Calculate Player of the Match (MVP)
+  getPlayerOfTheMatch() {
+    const playerPoints = {}; // id -> { name, teamName, points, summary }
+    const allPlayers = [...this.team1.players, ...this.team2.players];
+
+    this.inningsList.forEach(inn => {
+      // Batters
+      Object.values(inn.batterStats).forEach(b => {
+        if (!playerPoints[b.playerId]) {
+          const p = allPlayers.find(pl => pl.id === b.playerId);
+          const t = inn.battingTeam.players.some(pl => pl.id === b.playerId) ? inn.battingTeam.name : inn.bowlingTeam.name;
+          playerPoints[b.playerId] = { name: b.playerName, teamName: t, points: 0, runs: 0, balls: 0, wickets: 0, runsConceded: 0, overs: '0.0' };
+        }
+        playerPoints[b.playerId].points += b.mvpPoints;
+        playerPoints[b.playerId].runs += b.runs;
+        playerPoints[b.playerId].balls += b.ballsFaced;
+      });
+
+      // Bowlers
+      Object.values(inn.bowlerStats).forEach(bw => {
+        if (!playerPoints[bw.playerId]) {
+          const p = allPlayers.find(pl => pl.id === bw.playerId);
+          const t = inn.bowlingTeam.players.some(pl => pl.id === bw.playerId) ? inn.bowlingTeam.name : inn.battingTeam.name;
+          playerPoints[bw.playerId] = { name: bw.playerName, teamName: t, points: 0, runs: 0, balls: 0, wickets: 0, runsConceded: 0, overs: '0.0' };
+        }
+        playerPoints[bw.playerId].points += bw.mvpPoints;
+        playerPoints[bw.playerId].wickets += bw.wickets;
+        playerPoints[bw.playerId].runsConceded += bw.runsConceded;
+        playerPoints[bw.playerId].overs = bw.oversNotation;
+      });
+    });
+
+    const sorted = Object.values(playerPoints).sort((a, b) => b.points - a.points);
+    return sorted[0] || null;
   }
 }
 

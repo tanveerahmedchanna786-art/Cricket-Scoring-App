@@ -1,5 +1,10 @@
 /**
  * engine.js - Automated Cricket Rule Engine & State Management (EF101-P02)
+ * Enhanced with:
+ * - Context-aware Automated Live Commentary Generator
+ * - Shot Direction tracking for Wagon Wheel analysis
+ * - Player of the Match (MVP) computation
+ * - Pure Event Sourcing & 1-click Undo
  */
 
 class CricketEngine {
@@ -10,6 +15,7 @@ class CricketEngine {
     this.onPromptNextBatter = null;
     this.onInningsEnded = null;
     this.onMatchEnded = null;
+    this.onDeliveryScored = null; // Callback for celebrations (4, 6, wicket)
   }
 
   startMatch({ strikerId, nonStrikerId, bowlerId }) {
@@ -64,7 +70,7 @@ class CricketEngine {
 
   _ensurePlayerStats(innings, strikerId, nonStrikerId, bowlerId) {
     const allPlayers = [...innings.battingTeam.players, ...innings.bowlingTeam.players];
-    const findPlayer = (id) => allPlayers.find(p => p.id === id) || new Player(id, 'Unknown Player');
+    const findPlayer = (id) => allPlayers.find(p => p.id === id) || new Player(id, 'Player');
 
     if (strikerId && !innings.batterStats[strikerId]) {
       const p = findPlayer(strikerId);
@@ -83,7 +89,7 @@ class CricketEngine {
   processDelivery(event) {
     const innings = this.match.getCurrentInnings();
     if (!innings || innings.isCompleted || this.match.status === 'completed') {
-      return { success: false, message: 'Match has already concluded.' };
+      return { success: false, message: 'Innings/Match has concluded.' };
     }
 
     const {
@@ -92,28 +98,24 @@ class CricketEngine {
       isWicket = false,
       dismissalType = null,
       dismissedPlayerId = innings.currentStrikerId,
-      shotAngle = null
+      shotZone = null
     } = event;
 
+    // 1. Legal ball calculation: Wide & No-ball are NOT legal balls
     const isLegalBall = (extraType !== 'wide' && extraType !== 'no_ball');
 
+    // 2. Extra runs calculation
     let extraRuns = 0;
-    let runsOffBat = 0;
-
-    if (extraType === 'wide') {
-      extraRuns = 1 + runs;
-      runsOffBat = 0;
-    } else if (extraType === 'no_ball') {
+    if (extraType === 'wide' || extraType === 'no_ball') {
       extraRuns = 1;
-      runsOffBat = runs;
     } else if (extraType === 'bye' || extraType === 'leg_bye') {
       extraRuns = runs;
-      runsOffBat = 0;
-    } else {
-      extraRuns = 0;
-      runsOffBat = runs;
     }
 
+    // 3. Runs credited to batter
+    const runsOffBat = (extraType === 'bye' || extraType === 'leg_bye' || extraType === 'wide') ? 0 : runs;
+
+    // 4. Bowler credit rule (Run Out gives NO wicket credit to bowler)
     let bowlerCredited = false;
     if (isWicket) {
       if (['bowled', 'caught', 'lbw', 'stumped', 'hit_wicket'].includes(dismissalType)) {
@@ -124,6 +126,24 @@ class CricketEngine {
     const currentOverNum = Math.floor(innings.legalBalls / 6);
     const ballInOver = (innings.legalBalls % 6) + (isLegalBall ? 1 : 0);
 
+    // 5. Generate Dynamic Live Commentary
+    const striker = innings.batterStats[innings.currentStrikerId];
+    const bowler = innings.bowlerStats[innings.currentBowlerId];
+    const strikerName = striker ? striker.playerName : 'Striker';
+    const bowlerName = bowler ? bowler.playerName : 'Bowler';
+
+    const commentary = this._generateCommentary({
+      bowlerName,
+      strikerName,
+      runs: runsOffBat,
+      extraType,
+      extraRuns,
+      isWicket,
+      dismissalType,
+      shotZone
+    });
+
+    // 6. Create atomic delivery record
     const delivery = new Delivery({
       ballNumber: innings.deliveries.length + 1,
       overNumber: currentOverNum,
@@ -139,17 +159,21 @@ class CricketEngine {
       dismissalType,
       dismissedPlayerId,
       bowlerCredited,
-      shotAngle
+      shotZone,
+      commentary
     });
 
+    // 7. Push delivery to event log & recompute
     innings.deliveries.push(delivery);
     this._recomputeInningsState(innings);
 
-    const physicalRunsRan = runs;
-    if (physicalRunsRan % 2 !== 0 && !isWicket) {
+    // 8. Strike rotation
+    const physicalRuns = (extraType === 'wide') ? 0 : runs;
+    if (physicalRuns % 2 !== 0 && !isWicket) {
       this._swapStrike(innings);
     }
 
+    // 9. Over completion check
     let overCompleted = false;
     if (isLegalBall && innings.legalBalls > 0 && innings.legalBalls % 6 === 0) {
       overCompleted = true;
@@ -158,16 +182,53 @@ class CricketEngine {
       innings.currentBowlerId = null;
     }
 
+    // 10. Check innings or match finish
     this._checkInningsCompletion(innings);
+
+    // 11. Trigger celebration callback
+    if (this.onDeliveryScored) {
+      this.onDeliveryScored(delivery);
+    }
+
     this._notifyStateChange();
 
     return {
       success: true,
       overCompleted,
       isWicket,
+      delivery,
       inningsEnded: innings.isCompleted,
       matchEnded: this.match.status === 'completed'
     };
+  }
+
+  // Live Commentary Generator
+  _generateCommentary({ bowlerName, strikerName, runs, extraType, isWicket, dismissalType, shotZone }) {
+    const zoneText = shotZone ? ` towards ${shotZone.replace('_', ' ')}` : '';
+
+    if (isWicket) {
+      switch (dismissalType) {
+        case 'bowled': return `🔥 BOWLED HIM! ${bowlerName} shatters the stumps! Clean bowled, ${strikerName} has to walk back!`;
+        case 'caught': return `🧤 CAUGHT! ${strikerName} mistimes the drive${zoneText}, and the fielder takes a comfortable catch off ${bowlerName}!`;
+        case 'lbw': return `⚡ LBW! Huge appeal from ${bowlerName}... and the umpire's finger goes up! Plumb in front!`;
+        case 'stumped': return `💨 STUMPED! ${strikerName} steps down the track, misses, and the bails are whipped off in a flash!`;
+        case 'run_out': return `🏃 RUN OUT! Total mix-up between the batters! Direct hit and ${strikerName} is caught short of the crease!`;
+        case 'hit_wicket': return `💥 HIT WICKET! Incredible bad luck, ${strikerName} dislodges the bails!`;
+        default: return `💥 OUT! ${strikerName} is dismissed off ${bowlerName}!`;
+      }
+    }
+
+    if (extraType === 'wide') return `↔️ Wide called! ${bowlerName} sprays this well down the leg side. Extra run to the total.`;
+    if (extraType === 'no_ball') return `⚠️ NO BALL! ${bowlerName} oversteps the line! Free hit incoming!`;
+    if (extraType === 'bye') return `🏃 Byes taken! The ball beats both batter and keeper, batters sneak a run.`;
+    if (extraType === 'leg_bye') return `🛡️ Leg bye! Off the pads, and they scamper through for a quick single.`;
+
+    if (runs === 6) return `🚀 MAXIMUM! ${strikerName} connects sweetly${zoneText}! That is massive, sailing high into the crowd for SIX!`;
+    if (runs === 4) return `⚡ FOUR! Gorgeous stroke from ${strikerName}${zoneText}! Races away across the lightning-fast outfield!`;
+    if (runs === 3) return `🏃 Superb running! ${strikerName} pierces the gap, and they come back for three!`;
+    if (runs === 2) return `⚡ Soft hands into the gap, easy two runs taken comfortably.`;
+    if (runs === 1) return `🎯 Pushed into the cover region for a sensible single. Strike rotated.`;
+    return `🛡️ Good length delivery from ${bowlerName}, defended solidly by ${strikerName}. No run.`;
   }
 
   _recomputeInningsState(innings) {
@@ -188,15 +249,14 @@ class CricketEngine {
     });
 
     innings.deliveries.forEach((del) => {
-      const totalBallRuns = del.runsScored + del.extraRuns;
-      innings.totalRuns += totalBallRuns;
+      innings.totalRuns += (del.runsScored + del.extraRuns);
 
       if (del.extraType === 'wide') {
-        innings.extras.wides += del.extraRuns;
-        innings.extras.total += del.extraRuns;
+        innings.extras.wides += (1 + del.runsScored);
+        innings.extras.total += (1 + del.runsScored);
       } else if (del.extraType === 'no_ball') {
-        innings.extras.noBalls += del.extraRuns;
-        innings.extras.total += del.extraRuns;
+        innings.extras.noBalls += 1;
+        innings.extras.total += 1;
       } else if (del.extraType === 'bye') {
         innings.extras.byes += del.extraRuns;
         innings.extras.total += del.extraRuns;
@@ -229,10 +289,10 @@ class CricketEngine {
         }
         let runsCharged = del.runsScored;
         if (del.extraType === 'wide') {
-          runsCharged += del.extraRuns;
+          runsCharged += (1 + del.runsScored);
           bowler.wides += 1;
         } else if (del.extraType === 'no_ball') {
-          runsCharged += del.extraRuns;
+          runsCharged += 1;
           bowler.noBalls += 1;
         }
         bowler.runsConceded += runsCharged;
@@ -248,7 +308,7 @@ class CricketEngine {
         if (dismissedBatter) {
           dismissedBatter.isOut = true;
           dismissedBatter.dismissalInfo = del.dismissalType;
-          dismissedBatter.bowlerName = del.bowlerCredited && bowler ? bowler.playerName : '';
+          dismissedBatter.bowlerName = bowler ? bowler.playerName : '';
         }
         innings.fallOfWickets.push({
           wicketNum: innings.totalWickets,
@@ -336,10 +396,10 @@ class CricketEngine {
 
     if (inn2.totalRuns >= inn1.totalRuns + 1) {
       const wicketsRemaining = (inn2.battingTeam.players.length - 1) - inn2.totalWickets;
-      this.match.result = `${inn2.battingTeam.name} won by ${wicketsRemaining} wicket${wicketsRemaining === 1 ? '' : 's'}`;
+      this.match.result = `${inn2.battingTeam.flag || ''} ${inn2.battingTeam.name} won by ${wicketsRemaining} wicket${wicketsRemaining === 1 ? '' : 's'}`;
     } else if (inn1.totalRuns > inn2.totalRuns) {
       const runMargin = inn1.totalRuns - inn2.totalRuns;
-      this.match.result = `${inn1.battingTeam.name} won by ${runMargin} run${runMargin === 1 ? '' : 's'}`;
+      this.match.result = `${inn1.battingTeam.flag || ''} ${inn1.battingTeam.name} won by ${runMargin} run${runMargin === 1 ? '' : 's'}`;
     } else {
       this.match.result = `Match Tied (${inn1.totalRuns} runs each)`;
     }

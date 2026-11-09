@@ -1,0 +1,19 @@
+{
+  "name": "CricScore Pro - Cricket Match Scoring",
+  "short_name": "CricScore",
+  "description": "Professional 100% offline cricket scoring system with international squads and automated rules.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0f18",
+  "theme_color": "#0a0f18",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512 192x192 128x128 64x64",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
