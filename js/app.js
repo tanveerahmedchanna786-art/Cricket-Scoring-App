@@ -1,6 +1,3 @@
-/**
- * app.js - Main UI Controller for Cricket Match Scoring Application (EF101-P02)
- */
 
 const App = {
   engine: null,
