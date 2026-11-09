@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cricket Match Scorer - EF101-P02</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="phone-wrapper">
+    <!-- App Header -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-icon">🏏</span>
+        <div>
+          <h1 class="brand-title">CricScore</h1>
+          <span class="brand-badge">EF101-P02</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-open-demo" class="icon-btn" title="Run Professor Viva Demo">
+          ⚡ Demo
+        </button>
+        <button id="btn-quick-new-match" class="icon-btn" title="New Match">
+          ➕ New
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Screens Container -->
+    <main class="screen-container">
+
+      <!-- SCREEN 1: LIVE SCORING -->
+      <section id="screen-live" class="screen active">
+        <!-- Match Score Card -->
+        <div class="score-card">
+          <div class="match-status-bar">
+            <span id="display-teams-vs" class="teams-vs">Super Kings vs Royal Challengers</span>
+            <span id="display-venue" class="match-venue">National Stadium</span>
+          </div>
+
+          <div class="primary-score-display">
+            <div class="main-runs">
+              <span id="display-runs">0</span>/<span id="display-wickets">0</span>
+            </div>
+            <div class="main-overs">
+              Overs: <strong id="display-overs">0.0</strong> / <span id="display-total-overs">5</span>
+            </div>
+          </div>
+
+          <div class="run-rates-bar">
+            <div class="rr-item">CRR: <strong id="display-crr">0.00</strong></div>
+            <div id="rr-item-rrr" class="rr-item" style="display: none;">RRR: <strong id="display-rrr">0.00</strong></div>
+            <div class="rr-item">Innings: <strong id="display-innings-num">1st</strong></div>
+          </div>
+
+          <div id="target-banner" class="target-badge" style="display: none;">
+            Target: <strong id="display-target">0</strong> (<span id="display-needs">0 runs in 0 balls</span>)
+          </div>
+        </div>
+
+        <!-- Current Over Ball Strip -->
+        <div class="over-strip-card">
+          <span class="over-label">This Over</span>
+          <div id="ball-pills-container" class="ball-pills">
+            <span class="ball-pill">•</span>
+          </div>
+        </div>
+
+        <!-- Batters on Crease Table -->
+        <div class="stats-card">
+          <div class="section-title">
+            <span>Batting</span>
+            <span>R (B) 4s 6s SR</span>
+          </div>
+          <table class="crease-table">
+            <thead>
+              <tr>
+                <th>Batter</th>
+                <th>R</th>
+                <th>B</th>
+                <th>4s</th>
+                <th>6s</th>
+                <th>SR</th>
+              </tr>
+            </thead>
+            <tbody id="crease-batters-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Current Bowler Card -->
+        <div class="stats-card">
+          <div class="section-title">
+            <span>Bowling</span>
+            <span>O - M - R - W (Econ)</span>
+          </div>
+          <div class="bowler-row">
+            <span id="display-bowler-name" class="bowler-name">Select Bowler</span>
+            <span id="display-bowler-stats" class="bowler-numbers">0.0 - 0 - 0 - 0 (0.00)</span>
+          </div>
+        </div>
+
+        <!-- Scoring Keypad -->
+        <div class="keypad-card">
+          <div class="keypad-row">
+            <button class="keypad-btn btn-run" onclick="App.recordBall(0)">0</button>
+            <button class="keypad-btn btn-run" onclick="App.recordBall(1)">1</button>
+            <button class="keypad-btn btn-run" onclick="App.recordBall(2)">2</button>
+            <button class="keypad-btn btn-run" onclick="App.recordBall(3)">3</button>
+          </div>
+          <div class="keypad-row">
+            <button class="keypad-btn btn-boundary" onclick="App.recordBall(4)">4</button>
+            <button class="keypad-btn btn-boundary" onclick="App.recordBall(6)">6</button>
+            <button class="keypad-btn btn-extra" onclick="App.recordBall(0, 'wide')">Wd</button>
+            <button class="keypad-btn btn-extra" onclick="App.recordBall(0, 'no_ball')">Nb</button>
+          </div>
+          <div class="keypad-row" style="grid-template-columns: repeat(5, 1fr);">
+            <button class="keypad-btn btn-extra" onclick="App.recordBall(1, 'bye')">Bye</button>
+            <button class="keypad-btn btn-extra" onclick="App.recordBall(1, 'leg_bye')">Lb</button>
+            <button class="keypad-btn btn-extra" style="background: #3e2e1a; font-size: 0.72rem;" onclick="App.openExtraModal()">+Ext</button>
+            <button class="keypad-btn btn-wicket" onclick="App.openWicketModal()">WKT</button>
+            <button class="keypad-btn btn-undo" onclick="App.undoLastBall()">↩</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: MATCH SETUP -->
+      <section id="screen-setup" class="screen">
+        <h2 style="font-size: 1.1rem; color: var(--primary);">Create New Match</h2>
+        <p style="font-size: 0.78rem; color: var(--text-muted);">Configure match details, overs, and playing XI</p>
+
+        <form id="match-setup-form">
+          <div class="form-group">
+            <label class="form-label">Team 1</label>
+            <select id="setup-team1" class="form-select" required></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Team 2</label>
+            <select id="setup-team2" class="form-select" required></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Match Overs</label>
+            <input type="number" id="setup-overs" class="form-input" min="1" max="50" value="5" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Venue / Ground</label>
+            <input type="text" id="setup-venue" class="form-input" value="National Stadium" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Toss Winner</label>
+            <select id="setup-toss-winner" class="form-select">
+              <option value="team1">Team 1</option>
+              <option value="team2">Team 2</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Elected To</label>
+            <select id="setup-elected-to" class="form-select">
+              <option value="bat">Bat First</option>
+              <option value="bowl">Bowl First</option>
+            </select>
+          </div>
+
+          <div id="setup-innings1-banner" class="target-badge" style="display: block; margin: 10px 0; background: rgba(0, 230, 118, 0.12); border-color: var(--primary); color: var(--primary); font-size: 0.82rem;">
+            🏏 Batting First: Team 1
+          </div>
+
+          <hr style="border: 0.5px solid var(--border); margin: 12px 0;">
+
+          <h3 style="font-size: 0.9rem; color: var(--info); margin-bottom: 8px;">Select Opening Players</h3>
+
+          <div class="form-group">
+            <label class="form-label" id="label-setup-striker">Striker (Batter 1)</label>
+            <select id="setup-striker" class="form-select" required></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" id="label-setup-non-striker">Non-Striker (Batter 2)</label>
+            <select id="setup-non-striker" class="form-select" required></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" id="label-setup-bowler">Opening Bowler</label>
+            <select id="setup-bowler" class="form-select" required></select>
+          </div>
+
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">
+            🏏 Start Match
+          </button>
+        </form>
+      </section>
+
+      <!-- SCREEN 3: TEAMS & PLAYERS -->
+      <section id="screen-teams" class="screen">
+        <h2 style="font-size: 1.1rem; color: var(--primary);">Teams & Rosters</h2>
+        <p style="font-size: 0.78rem; color: var(--text-muted);">Create teams and add players. Saved offline.</p>
+
+        <!-- New Team Form -->
+        <form id="create-team-form" style="margin-top: 8px;">
+          <div class="form-group">
+            <label class="form-label">New Team Name</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="new-team-name" class="form-input" placeholder="e.g. Mumbai Indians" required style="flex: 1;">
+              <button type="submit" class="btn-primary" style="padding: 10px 14px;">Add</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Saved Teams List -->
+        <div id="saved-teams-list" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;"></div>
+      </section>
+
+      <!-- SCREEN 4: FULL SCORECARD -->
+      <section id="screen-scorecard" class="screen">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="font-size: 1.1rem; color: var(--primary);">Match Scorecard</h2>
+          <button id="btn-export-scorecard" class="icon-btn" onclick="App.exportScorecard()">
+            📤 Share / Save
+          </button>
+        </div>
+        <div id="scorecard-container" class="scorecard-view"></div>
+      </section>
+
+      <!-- SCREEN 5: MATCH HISTORY -->
+      <section id="screen-history" class="screen">
+        <h2 style="font-size: 1.1rem; color: var(--primary);">Past Matches</h2>
+        <p style="font-size: 0.78rem; color: var(--text-muted);">Reopen completed match summaries from local storage</p>
+        <div id="history-list" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="App.switchScreen('screen-live')">
+        <span>🔴</span>
+        <span>Live</span>
+      </button>
+      <button class="nav-item" onclick="App.switchScreen('screen-setup')">
+        <span>⚙️</span>
+        <span>Setup</span>
+      </button>
+      <button class="nav-item" onclick="App.switchScreen('screen-teams')">
+        <span>👥</span>
+        <span>Teams</span>
+      </button>
+      <button class="nav-item" onclick="App.switchScreen('screen-scorecard')">
+        <span>📊</span>
+        <span>Scorecard</span>
+      </button>
+      <button class="nav-item" onclick="App.switchScreen('screen-history')">
+        <span>📜</span>
+        <span>History</span>
+      </button>
+    </nav>
+
+    <!-- MODAL 1: WICKET DISMISSAL -->
+    <div id="modal-wicket" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" style="color: var(--danger);">Dismissal Details</h3>
+          <button class="modal-close" onclick="App.closeModal('modal-wicket')">&times;</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Dismissal Type</label>
+          <div class="dismissal-grid">
+            <button type="button" class="dismissal-btn selected" onclick="App.selectDismissalType('bowled', this)">Bowled (Bowler +W)</button>
+            <button type="button" class="dismissal-btn" onclick="App.selectDismissalType('caught', this)">Caught (Bowler +W)</button>
+            <button type="button" class="dismissal-btn" onclick="App.selectDismissalType('lbw', this)">LBW (Bowler +W)</button>
+            <button type="button" class="dismissal-btn" onclick="App.selectDismissalType('stumped', this)">Stumped (Bowler +W)</button>
+            <button type="button" class="dismissal-btn" onclick="App.selectDismissalType('run_out', this)">Run Out (No Bowler W)</button>
+            <button type="button" class="dismissal-btn" onclick="App.selectDismissalType('hit_wicket', this)">Hit Wicket (Bowler +W)</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Out Player</label>
+          <select id="wicket-out-player" class="form-select"></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Runs Scored on this ball (if run out / bye)</label>
+          <input type="number" id="wicket-runs" class="form-input" min="0" max="6" value="0">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Next Incoming Batter</label>
+          <select id="wicket-next-batter" class="form-select" required></select>
+        </div>
+
+        <button class="btn-primary" onclick="App.confirmWicket()">Confirm Wicket</button>
+      </div>
+    </div>
+
+    <!-- MODAL 2: NEXT BOWLER PROMPT (END OF OVER) -->
+    <div id="modal-bowler" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" style="color: var(--info);">Over Completed</h3>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted);">
+          6 legal balls bowled. Select the next bowler. (Cricket Rule: Previous bowler cannot bowl two consecutive overs).
+        </p>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label">Next Bowler</label>
+          <select id="next-bowler-select" class="form-select" required></select>
+        </div>
+
+        <button class="btn-primary" onclick="App.confirmNextBowler()">Confirm Bowler</button>
+      </div>
+    </div>
+
+    <!-- MODAL 3: INNINGS BREAK -->
+    <div id="modal-innings-break" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" style="color: var(--warning);">Innings Break</h3>
+        </div>
+        <p id="innings-break-summary" style="font-size: 0.9rem; line-height: 1.4; color: var(--text-main);"></p>
+
+        <hr style="border: 0.5px solid var(--border); margin: 8px 0;">
+
+        <h4 style="font-size: 0.85rem; color: var(--info);">Select 2nd Innings Openers</h4>
+        <div class="form-group">
+          <label class="form-label">Striker</label>
+          <select id="inn2-striker" class="form-select" required></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Non-Striker</label>
+          <select id="inn2-non-striker" class="form-select" required></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Opening Bowler</label>
+          <select id="inn2-bowler" class="form-select" required></select>
+        </div>
+
+        <button class="btn-primary" onclick="App.confirmStartSecondInnings()">Start 2nd Innings</button>
+      </div>
+    </div>
+
+    <!-- MODAL 4: MATCH FINISHED -->
+    <div id="modal-match-finish" class="modal-overlay">
+      <div class="modal-content" style="text-align: center;">
+        <span style="font-size: 3rem;">🏆</span>
+        <h3 class="modal-title" style="color: var(--primary); font-size: 1.3rem;">Match Concluded!</h3>
+        <p id="match-finish-result" style="font-size: 1.1rem; font-weight: 700; color: #fff; margin: 10px 0;"></p>
+        <div style="display: flex; gap: 8px; justify-content: center; margin-top: 10px;">
+          <button class="btn-primary" onclick="App.closeModal('modal-match-finish'); App.switchScreen('screen-scorecard');">View Full Scorecard</button>
+          <button class="btn-secondary" onclick="App.closeModal('modal-match-finish'); App.switchScreen('screen-setup');">New Match</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 5: PROFESSOR VIVA DEMO CONSOLE -->
+    <div id="modal-demo" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" style="color: var(--primary);">⚡ Viva Edge-Cases Demo</h3>
+          <button class="modal-close" onclick="App.closeModal('modal-demo')">&times;</button>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted);">
+          Automated simulation of all required edge cases (wides, no-balls, boundaries, wickets with bowler credit vs run-out, strike changes, over ending, and chase victory).
+        </p>
+        <div id="demo-console-log" class="demo-console">Click "Run Demo" below to begin...</div>
+        <button id="btn-start-demo-run" class="btn-primary" onclick="App.triggerEdgeCaseDemo()">▶ Run Demo</button>
+    <!-- MODAL 6: CUSTOM EXTRAS WITH RUNS -->
+    <div id="modal-custom-extra" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" style="color: var(--warning);">Custom Extra Delivery</h3>
+          <button class="modal-close" onclick="App.closeModal('modal-custom-extra')">&times;</button>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted);">
+          Record extras with additional completed runs (e.g. Wides + Overthrows, No-ball + 4, etc.).
+        </p>
+
+        <div class="form-group" style="margin-top: 8px;">
+          <label class="form-label">Extra Type</label>
+          <select id="custom-extra-type" class="form-select">
+            <option value="wide">Wide (1 penalty extra)</option>
+            <option value="no_ball">No-Ball (1 penalty extra + bat runs)</option>
+            <option value="bye">Bye (runs as extras, not charged to bowler)</option>
+            <option value="leg_bye">Leg-Bye (runs as extras, not charged to bowler)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Additional Runs / Runs off Bat</label>
+          <select id="custom-extra-runs" class="form-select">
+            <option value="0">0 additional runs</option>
+            <option value="1">1 run (batters cross ends)</option>
+            <option value="2">2 runs</option>
+            <option value="3">3 runs (batters cross ends)</option>
+            <option value="4">4 runs (boundary)</option>
+            <option value="6">6 runs (maximum on No-ball)</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" onclick="App.confirmCustomExtra()">Record Extra Delivery</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="js/models.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/demo.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
