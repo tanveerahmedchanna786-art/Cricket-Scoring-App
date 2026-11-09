@@ -70,7 +70,7 @@ This application is a **100% offline, event-driven cricket match scoring mobile 
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Why a Delivery-Level Record is Useful (Viva Core Question)
+### Why a Delivery-Level Record is Useful
 Traditional counters (e.g., `totalRuns += 4`) cause catastrophic data loss: you cannot reconstruct how an innings unfolded, cannot undo a scoring mistake without corrupted state, and cannot verify maiden overs or wagon wheels.
 
 By treating each ball as an immutable **`Delivery`** event:
@@ -80,35 +80,7 @@ By treating each ball as an immutable **`Delivery`** event:
 
 ---
 
-## 3. Project Division for the 3 Group Members
-
-When presenting to the instructor, use this clear division of responsibility:
-
-| Student | Assigned Module | Key Components Explained |
-| :--- | :--- | :--- |
-| **Student 1** | **Cricket Rule Engine & State Logic** (`engine.js`) | Strike rotation on odd runs & over end, legal ball filtering (wide/no-ball), consecutive over bowler validation, and innings conclusion conditions. |
-| **Student 2** | **Entity Modeling & Local Storage** (`models.js`, `storage.js`) | The 7 entity classes, Event Sourcing via `Delivery` records, the `Undo` recomputation algorithm, and offline `localStorage` persistence. |
-| **Student 3** | **UI/UX & Demonstration Module** (`app.js`, `index.html`, `demo.js`) | Responsive mobile design, over ball strip pills, modal flows (wicket selection & bowler assignment), scorecard export, and the Viva demo runner. |
-
----
-
-## 4. Viva / Defense Questions & Prepared Answers
-
-### Q1: *"How does your app prevent an incomplete team from starting?"*
-> **Answer**:  
-> In `app.js`, the `handleStartNewMatch()` method inspects the roster length of both selected teams. If either team has fewer than `minTeamSize` (default: 2 for demo, up to 11 for standard), match creation is halted with an alert prompt instructing the scorer to add more players.
-
-### Q2: *"Why does a Wide or No-ball not count as a legal ball?"*
-> **Answer**:  
-> In `engine.js`, `isLegalBall` is evaluated as `extraType !== 'wide' && extraType !== 'no_ball'`. Only when `isLegalBall === true` does `innings.legalBalls` increment. Therefore, an over only finishes when exactly 6 legal balls have been bowled.
-
-### Q3: *"How is bowler credit assigned for wickets?"*
-> **Answer**:  
-> The `processDelivery()` method tests the dismissal type. If the dismissal is `bowled`, `caught`, `lbw`, `stumped`, or `hit_wicket`, `bowlerCredited = true` and the bowler's wicket tally increments. If the dismissal is `run_out`, `bowlerCredited = false`: the batting team loses a wicket, but the bowler is not credited.
-
----
-
-## 5. How to Run the App in VS Code
+## 3. How to Run the App in VS Code
 
 1. Open **VS Code**.
 2. Click **File ➔ Open Folder...** and select:  
