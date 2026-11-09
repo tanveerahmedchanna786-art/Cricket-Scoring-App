@@ -38,7 +38,6 @@ body {
   padding: 10px;
 }
 
-/* Simulated Mobile Phone Container */
 .phone-wrapper {
   width: 100%;
   max-width: 440px;
@@ -54,7 +53,6 @@ body {
   position: relative;
 }
 
-/* App Header */
 .app-header {
   background-color: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -116,7 +114,6 @@ body {
   border-color: var(--primary);
 }
 
-/* Bottom Navigation Bar */
 .bottom-nav {
   background-color: var(--surface);
   border-top: 1px solid var(--border);
@@ -144,13 +141,6 @@ body {
   color: var(--primary);
 }
 
-.nav-item svg {
-  width: 20px;
-  height: 20px;
-  fill: currentColor;
-}
-
-/* Screen Views */
 .screen-container {
   flex: 1;
   overflow-y: auto;
@@ -170,7 +160,6 @@ body {
   display: flex;
 }
 
-/* Match Header & Score Card */
 .score-card {
   background: linear-gradient(135deg, var(--surface) 0%, #152233 100%);
   border: 1px solid var(--border);
@@ -271,7 +260,69 @@ body {
   font-weight: 600;
 }
 
-/* Current Over Pill Strip */
+/* Wagon Wheel Styling */
+.wagon-wheel-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wagon-wheel-wrapper {
+  width: 160px;
+  height: 160px;
+  position: relative;
+  margin: 6px 0;
+}
+
+.wagon-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-4 { background: #40c4ff; }
+.dot-6 { background: #ff5252; }
+
+/* Shot direction grid modal */
+.shot-direction-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.shot-btn {
+  background: var(--surface-light);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.shot-btn:hover {
+  background: var(--primary);
+  color: #000;
+}
+
+/* Over Pill Strip */
 .over-strip-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -311,34 +362,13 @@ body {
   font-weight: 700;
   color: var(--text-main);
   flex-shrink: 0;
-  transition: transform 0.2s;
 }
 
-.ball-pill.pill-wicket {
-  background: var(--danger);
-  color: #fff;
-  border-color: var(--danger);
-}
+.ball-pill.pill-wicket { background: var(--danger); color: #fff; }
+.ball-pill.pill-four { background: #2979ff; color: #fff; }
+.ball-pill.pill-six { background: var(--primary); color: #000; }
+.ball-pill.pill-extra { background: var(--warning); color: #000; }
 
-.ball-pill.pill-four {
-  background: #2979ff;
-  color: #fff;
-  border-color: #2979ff;
-}
-
-.ball-pill.pill-six {
-  background: var(--primary);
-  color: #000;
-  border-color: var(--primary);
-}
-
-.ball-pill.pill-extra {
-  background: var(--warning);
-  color: #000;
-  border-color: var(--warning);
-}
-
-/* Batters Table & Bowler Card */
 .stats-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -370,9 +400,7 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.crease-table th:first-child {
-  text-align: left;
-}
+.crease-table th:first-child { text-align: left; }
 
 .crease-table td {
   padding: 6px;
@@ -388,10 +416,7 @@ body {
   gap: 4px;
 }
 
-.striker-star {
-  color: var(--primary);
-  font-size: 0.9rem;
-}
+.striker-star { color: var(--primary); font-size: 0.9rem; }
 
 .bowler-row {
   display: flex;
@@ -401,17 +426,9 @@ body {
   margin-top: 4px;
 }
 
-.bowler-name {
-  font-weight: 700;
-  color: var(--text-main);
-}
+.bowler-name { font-weight: 700; color: var(--text-main); }
+.bowler-numbers { color: var(--info); font-weight: 600; }
 
-.bowler-numbers {
-  color: var(--info);
-  font-weight: 600;
-}
-
-/* Keypad Scoring Grid */
 .keypad-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -437,51 +454,17 @@ body {
   font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.keypad-btn:active {
-  transform: scale(0.94);
-}
+.keypad-btn.btn-run { background: #1e3048; }
+.keypad-btn.btn-boundary { background: #164032; color: var(--primary); border-color: var(--primary-dark); }
+.keypad-btn.btn-extra { background: #3b2c15; color: var(--warning); font-size: 0.85rem; }
+.keypad-btn.btn-wicket { background: rgba(255, 82, 82, 0.2); color: var(--danger); border-color: var(--danger); font-size: 0.9rem; }
+.keypad-btn.btn-undo { background: #252836; color: #ffca28; font-size: 0.9rem; }
 
-.keypad-btn.btn-run {
-  background: #1e3048;
-}
-
-.keypad-btn.btn-run:hover {
-  background: #2a4160;
-  border-color: var(--info);
-}
-
-.keypad-btn.btn-boundary {
-  background: #164032;
-  color: var(--primary);
-  border-color: var(--primary-dark);
-}
-
-.keypad-btn.btn-extra {
-  background: #3b2c15;
-  color: var(--warning);
-  font-size: 0.85rem;
-}
-
-.keypad-btn.btn-wicket {
-  background: rgba(255, 82, 82, 0.2);
-  color: var(--danger);
-  border-color: var(--danger);
-  font-size: 0.9rem;
-}
-
-.keypad-btn.btn-undo {
-  background: #252836;
-  color: #ffca28;
-  font-size: 0.9rem;
-}
-
-/* Form Styles for Setup & Teams */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -489,11 +472,7 @@ body {
   margin-bottom: 12px;
 }
 
-.form-label {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
+.form-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
 
 .form-input, .form-select {
   background: var(--surface);
@@ -504,10 +483,6 @@ body {
   font-size: 0.9rem;
   font-family: inherit;
   outline: none;
-}
-
-.form-input:focus, .form-select:focus {
-  border-color: var(--primary);
 }
 
 .btn-primary {
@@ -523,12 +498,6 @@ body {
   justify-content: center;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover {
-  background: #00c864;
-  box-shadow: 0 4px 16px var(--primary-glow);
 }
 
 .btn-secondary {
@@ -542,7 +511,6 @@ body {
   font-weight: 600;
 }
 
-/* Modals */
 .modal-overlay {
   position: absolute;
   top: 0;
@@ -558,9 +526,7 @@ body {
   z-index: 100;
 }
 
-.modal-overlay.active {
-  display: flex;
-}
+.modal-overlay.active { display: flex; }
 
 .modal-content {
   background: var(--surface);
@@ -585,27 +551,10 @@ body {
   padding-bottom: 8px;
 }
 
-.modal-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-main);
-}
+.modal-title { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+.modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; }
 
-.modal-close {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.4rem;
-  cursor: pointer;
-}
-
-/* Dismissal Type Options */
-.dismissal-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
+.dismissal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .dismissal-btn {
   background: var(--surface-light);
   border: 1px solid var(--border);
@@ -617,14 +566,8 @@ body {
   cursor: pointer;
   text-align: center;
 }
+.dismissal-btn.selected { background: var(--danger); border-color: var(--danger); color: #fff; }
 
-.dismissal-btn.selected {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: #fff;
-}
-
-/* Demo Log Console */
 .demo-console {
   background: #000;
   border: 1px solid var(--border);
@@ -639,58 +582,12 @@ body {
   white-space: pre-wrap;
 }
 
-/* Scorecard Tables */
-.scorecard-view {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.innings-block {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px;
-}
-
-.innings-title {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--primary);
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 4px;
-}
-
-.table-responsive {
-  width: 100%;
-  overflow-x: auto;
-}
-
-.stat-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.75rem;
-}
-
-.stat-table th {
-  color: var(--text-muted);
-  text-align: right;
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.stat-table th:first-child {
-  text-align: left;
-}
-
-.stat-table td {
-  padding: 6px;
-  text-align: right;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.stat-table td:first-child {
-  text-align: left;
-  font-weight: 600;
-}
+.scorecard-view { display: flex; flex-direction: column; gap: 16px; }
+.innings-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; }
+.innings-title { font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.table-responsive { width: 100%; overflow-x: auto; }
+.stat-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+.stat-table th { color: var(--text-muted); text-align: right; padding: 6px; background: rgba(255, 255, 255, 0.03); }
+.stat-table th:first-child { text-align: left; }
+.stat-table td { padding: 6px; text-align: right; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.stat-table td:first-child { text-align: left; font-weight: 600; }

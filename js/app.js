@@ -5,40 +5,33 @@
 const App = {
   engine: null,
   activeDismissalType: 'bowled',
+  pendingBoundaryRuns: 0,
 
   init() {
-    // 1. Initialize storage defaults
     StorageManager.initDefaults();
 
-    // 2. Load or create default match
     const savedActiveMatch = StorageManager.getActiveMatch();
     if (savedActiveMatch) {
-      // Rehydrate match object
       this.rehydrateMatch(savedActiveMatch);
     } else {
       this.setupDefaultDemoMatch();
     }
 
-    // 3. Register engine event listeners
     this.setupEngineCallbacks();
 
-    // 4. Populate UI dropdowns and lists
     this.populateSetupTeams();
     this.renderTeamsList();
+    this.renderCareerStats();
     this.renderHistoryList();
 
-    // 5. Setup Form Listeners
     this.bindFormEvents();
 
-    // 6. Initial UI Render
     this.updateLiveUI();
   },
 
-  // Set up engine event hooks
   setupEngineCallbacks() {
     this.engine.onStateChanged = (match) => {
       this.updateLiveUI();
-      // Auto-save state to localStorage for offline crash recovery
       StorageManager.saveActiveMatch(match);
     };
 
@@ -52,11 +45,11 @@ const App = {
 
     this.engine.onMatchEnded = (result) => {
       StorageManager.saveCompletedMatch(this.engine.match);
+      this.renderCareerStats();
       this.openMatchFinishModal(result);
     };
   },
 
-  // Set up default initial match so the app is instantly usable
   setupDefaultDemoMatch() {
     const teams = StorageManager.getTeams();
     const team1 = teams[0];
@@ -64,7 +57,8 @@ const App = {
 
     const match = new Match({
       venue: 'National Stadium',
-      totalOvers: 2,
+      totalOvers: 5,
+      format: 'Custom',
       team1,
       team2,
       tossWinnerId: team1.id,
@@ -79,13 +73,13 @@ const App = {
     });
   },
 
-  // Rehydrate saved match from JSON
   rehydrateMatch(savedData) {
     const match = new Match({
       id: savedData.id,
       date: savedData.date,
       venue: savedData.venue,
       totalOvers: savedData.totalOvers,
+      format: savedData.format || 'Custom',
       team1: new Team(savedData.team1.id, savedData.team1.name, savedData.team1.players),
       team2: new Team(savedData.team2.id, savedData.team2.name, savedData.team2.players),
       tossWinnerId: savedData.tossWinnerId,
@@ -124,9 +118,7 @@ const App = {
     }
   },
 
-  // Bind Form Events
   bindFormEvents() {
-    // New Team Form
     const teamForm = document.getElementById('create-team-form');
     if (teamForm) {
       teamForm.addEventListener('submit', (e) => {
@@ -142,12 +134,12 @@ const App = {
           nameInput.value = '';
           this.renderTeamsList();
           this.populateSetupTeams();
+          this.renderCareerStats();
           alert(`Team "${teamName}" created with 2 starter players! Add more players below.`);
         }
       });
     }
 
-    // Match Setup Form
     const setupForm = document.getElementById('match-setup-form');
     if (setupForm) {
       setupForm.addEventListener('submit', (e) => {
@@ -156,31 +148,27 @@ const App = {
       });
     }
 
-    // Team 1 / Team 2 / Toss Winner / Elected To changes
     const t1Select = document.getElementById('setup-team1');
     const t2Select = document.getElementById('setup-team2');
-    const tossSelect = document.getElementById('setup-toss-winner');
-    const electedSelect = document.getElementById('setup-elected-to');
-
     if (t1Select) t1Select.addEventListener('change', () => this.updateSetupPlayerDropdowns());
     if (t2Select) t2Select.addEventListener('change', () => this.updateSetupPlayerDropdowns());
-    if (tossSelect) tossSelect.addEventListener('change', () => this.updateSetupPlayerDropdowns());
-    if (electedSelect) electedSelect.addEventListener('change', () => this.updateSetupPlayerDropdowns());
 
-    // Quick New Match button
     const btnQuick = document.getElementById('btn-quick-new-match');
-    if (btnQuick) {
-      btnQuick.addEventListener('click', () => this.switchScreen('screen-setup'));
-    }
+    if (btnQuick) btnQuick.addEventListener('click', () => this.switchScreen('screen-setup'));
 
-    // Demo button
     const btnDemo = document.getElementById('btn-open-demo');
-    if (btnDemo) {
-      btnDemo.addEventListener('click', () => this.openModal('modal-demo'));
-    }
+    if (btnDemo) btnDemo.addEventListener('click', () => this.openModal('modal-demo'));
   },
 
-  // Switch Active Screen View
+  // BONUS 6: Match Formats Selector
+  handleFormatChange() {
+    const format = document.getElementById('setup-format').value;
+    const oversInput = document.getElementById('setup-overs');
+    if (format === 'T20') oversInput.value = 20;
+    else if (format === 'ODI') oversInput.value = 50;
+    else oversInput.value = 5;
+  },
+
   switchScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -188,7 +176,6 @@ const App = {
     const targetScreen = document.getElementById(screenId);
     if (targetScreen) targetScreen.classList.add('active');
 
-    // Update bottom nav active indicator
     const navItems = document.querySelectorAll('.bottom-nav .nav-item');
     const screenIndexMap = {
       'screen-live': 0,
@@ -198,36 +185,28 @@ const App = {
       'screen-history': 4
     };
     const idx = screenIndexMap[screenId];
-    if (idx !== undefined && navItems[idx]) {
-      navItems[idx].classList.add('active');
-    }
+    if (idx !== undefined && navItems[idx]) navItems[idx].classList.add('active');
 
-    if (screenId === 'screen-scorecard') {
-      this.renderFullScorecard();
-    } else if (screenId === 'screen-history') {
-      this.renderHistoryList();
-    }
+    if (screenId === 'screen-scorecard') this.renderFullScorecard();
+    else if (screenId === 'screen-history') this.renderHistoryList();
+    else if (screenId === 'screen-teams') this.renderCareerStats();
   },
-
-  // ==================== LIVE SCORING UI UPDATES ====================
 
   updateLiveUI() {
     const match = this.engine.match;
     const inn = match.getCurrentInnings();
     if (!inn) return;
 
-    // 1. Header Information
     document.getElementById('display-teams-vs').textContent = `${inn.battingTeam.name} vs ${inn.bowlingTeam.name}`;
     document.getElementById('display-venue').textContent = match.venue;
     document.getElementById('display-innings-num').textContent = inn.inningsNumber === 1 ? '1st Innings' : '2nd Innings';
+    document.getElementById('display-format-tag').textContent = match.format || 'Custom';
 
-    // 2. Big Score & Overs
     document.getElementById('display-runs').textContent = inn.totalRuns;
     document.getElementById('display-wickets').textContent = inn.totalWickets;
     document.getElementById('display-overs').textContent = inn.oversNotation;
     document.getElementById('display-total-overs').textContent = match.totalOvers;
 
-    // 3. Run Rates
     document.getElementById('display-crr').textContent = inn.currentRunRate;
 
     const rrrContainer = document.getElementById('rr-item-rrr');
@@ -255,14 +234,10 @@ const App = {
       rrrContainer.style.display = 'none';
     }
 
-    // 4. Current Over Ball Pills Strip
     this.renderBallPills(inn);
-
-    // 5. Batters on Crease Table
     this.renderCreaseBatters(inn);
-
-    // 6. Current Bowler Stats Card
     this.renderCurrentBowler(inn);
+    this.renderWagonWheel(inn);
   },
 
   renderBallPills(inn) {
@@ -330,9 +305,42 @@ const App = {
     }
   },
 
-  // ==================== SCORING ACTIONS ====================
+  // BONUS 4: Wagon Wheel Visualization Renderer
+  renderWagonWheel(inn) {
+    const group = document.getElementById('wagon-shots-group');
+    const countEl = document.getElementById('wagon-wheel-count');
+    if (!group) return;
 
-  recordBall(runs, extraType = 'none') {
+    group.innerHTML = '';
+    const boundaryDeliveries = inn.deliveries.filter(d => (d.runsScored === 4 || d.runsScored === 6) && d.shotAngle !== null);
+    countEl.textContent = `${boundaryDeliveries.length} Boundaries`;
+
+    boundaryDeliveries.forEach(d => {
+      const angleRad = (d.shotAngle - 90) * (Math.PI / 180);
+      const radius = d.runsScored === 6 ? 88 : 70;
+      const x2 = 100 + radius * Math.cos(angleRad);
+      const y2 = 100 + radius * Math.sin(angleRad);
+
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '100');
+      line.setAttribute('y1', '100');
+      line.setAttribute('x2', x2);
+      line.setAttribute('y2', y2);
+      line.setAttribute('stroke', d.runsScored === 6 ? '#ff5252' : '#40c4ff');
+      line.setAttribute('stroke-width', '2.5');
+
+      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('cx', x2);
+      dot.setAttribute('cy', y2);
+      dot.setAttribute('r', '3');
+      dot.setAttribute('fill', d.runsScored === 6 ? '#ff5252' : '#40c4ff');
+
+      group.appendChild(line);
+      group.appendChild(dot);
+    });
+  },
+
+  recordBall(runs, extraType = 'none', shotAngle = null) {
     const inn = this.engine.match.getCurrentInnings();
     if (!inn.currentBowlerId) {
       this.openNextBowlerModal();
@@ -342,7 +350,8 @@ const App = {
     const result = this.engine.processDelivery({
       runs,
       extraType,
-      isWicket: false
+      isWicket: false,
+      shotAngle
     });
 
     if (result.overCompleted && !result.inningsEnded && !result.matchEnded) {
@@ -350,11 +359,24 @@ const App = {
     }
   },
 
+  recordBallWithDirection(runs) {
+    const inn = this.engine.match.getCurrentInnings();
+    if (!inn.currentBowlerId) {
+      this.openNextBowlerModal();
+      return;
+    }
+    this.pendingBoundaryRuns = runs;
+    this.openModal('modal-shot-direction');
+  },
+
+  confirmShotDirection(angle) {
+    this.closeModal('modal-shot-direction');
+    this.recordBall(this.pendingBoundaryRuns, 'none', angle);
+  },
+
   undoLastBall() {
     const res = this.engine.undoLastDelivery();
-    if (!res.success) {
-      alert(res.message);
-    }
+    if (!res.success) alert(res.message);
   },
 
   openExtraModal() {
@@ -382,8 +404,6 @@ const App = {
       this.openNextBowlerModal();
     }
   },
-
-  // ==================== WICKET DISMISSAL FLOW ====================
 
   openWicketModal() {
     const inn = this.engine.match.getCurrentInnings();
@@ -445,16 +465,10 @@ const App = {
     this.closeModal('modal-wicket');
 
     if (!result.inningsEnded && !result.matchEnded) {
-      if (nextBatterId) {
-        this.engine.setNextBatter(nextBatterId);
-      }
-      if (result.overCompleted) {
-        this.openNextBowlerModal();
-      }
+      if (nextBatterId) this.engine.setNextBatter(nextBatterId);
+      if (result.overCompleted) this.openNextBowlerModal();
     }
   },
-
-  // ==================== BOWLER SELECTION FLOW ====================
 
   openNextBowlerModal() {
     const inn = this.engine.match.getCurrentInnings();
@@ -483,8 +497,6 @@ const App = {
     }
     this.closeModal('modal-bowler');
   },
-
-  // ==================== INNINGS & MATCH TRANSITIONS ====================
 
   openInningsBreakModal(inn1) {
     const summary = `${inn1.battingTeam.name} scored ${inn1.totalRuns}/${inn1.totalWickets} in ${inn1.oversNotation} overs.<br>
@@ -533,7 +545,29 @@ const App = {
     this.openModal('modal-match-finish');
   },
 
-  // ==================== MATCH SETUP & VALIDATION ====================
+  // BONUS 5: Duckworth-Lewis-Stern Target Calculator Modal
+  openDlsModal() {
+    const inn1 = this.engine.match.inningsList[0];
+    if (inn1) {
+      document.getElementById('dls-inn1-score').value = inn1.totalRuns;
+      document.getElementById('dls-total-overs').value = this.engine.match.totalOvers;
+    }
+    this.openModal('modal-dls');
+  },
+
+  calculateDlsTarget() {
+    const s1 = parseInt(document.getElementById('dls-inn1-score').value, 10) || 100;
+    const totalOvers = parseInt(document.getElementById('dls-total-overs').value, 10) || 20;
+    const revisedOvers = parseInt(document.getElementById('dls-revised-overs').value, 10) || 10;
+    const wicketsLost = parseInt(document.getElementById('dls-wickets-lost').value, 10) || 0;
+
+    const resourceRemainingPct = Math.max(10, (revisedOvers / totalOvers) * (1 - wicketsLost * 0.05));
+    const target = Math.floor(s1 * resourceRemainingPct) + 1;
+
+    const resBox = document.getElementById('dls-result-box');
+    resBox.style.display = 'block';
+    resBox.innerHTML = `☔ Revised Target: <strong>${target} runs</strong> in ${revisedOvers} overs`;
+  },
 
   populateSetupTeams() {
     const teams = StorageManager.getTeams();
@@ -604,9 +638,9 @@ const App = {
       return;
     }
 
-    const minSize = 2; // Practical minimum team size for demonstration
+    const minSize = 2;
     if (team1.players.length < minSize || team2.players.length < minSize) {
-      alert(`Validation Error: Both teams must have at least ${minSize} players. Please add players in the Teams tab.`);
+      alert(`Validation Error: Both teams must have at least ${minSize} players.`);
       return;
     }
 
@@ -614,27 +648,14 @@ const App = {
     const nonStrikerId = document.getElementById('setup-non-striker').value;
     const bowlerId = document.getElementById('setup-bowler').value;
 
-    if (!strikerId || !nonStrikerId || !bowlerId) {
-      alert('Validation Error: Please select Opening Striker, Non-Striker, and Bowler.');
-      return;
-    }
-
     if (strikerId === nonStrikerId) {
       alert('Validation Error: Striker and Non-Striker cannot be the same player.');
       return;
     }
 
     const overs = parseInt(document.getElementById('setup-overs').value, 10);
-    if (isNaN(overs) || overs < 1 || overs > 50) {
-      alert('Validation Error: Match overs must be between 1 and 50.');
-      return;
-    }
-
+    const format = document.getElementById('setup-format').value;
     const venue = document.getElementById('setup-venue').value.trim();
-    if (!venue) {
-      alert('Validation Error: Venue name cannot be empty.');
-      return;
-    }
 
     const tossWinnerTeam = document.getElementById('setup-toss-winner').value === 'team1' ? team1.id : team2.id;
     const electedTo = document.getElementById('setup-elected-to').value;
@@ -642,6 +663,7 @@ const App = {
     const match = new Match({
       venue,
       totalOvers: overs,
+      format,
       team1,
       team2,
       tossWinnerId: tossWinnerTeam,
@@ -657,8 +679,6 @@ const App = {
 
     this.switchScreen('screen-live');
   },
-
-  // ==================== TEAMS & PLAYER MANAGEMENT ====================
 
   renderTeamsList() {
     const container = document.getElementById('saved-teams-list');
@@ -704,6 +724,60 @@ const App = {
     });
   },
 
+  // BONUS 3: Render Career Stats View
+  renderCareerStats() {
+    const container = document.getElementById('career-stats-container');
+    if (!container) return;
+
+    const stats = StorageManager.getCareerStats();
+    container.innerHTML = '';
+
+    if (stats.length === 0) {
+      container.innerHTML = '<p style="font-size: 0.78rem; color: var(--text-muted);">No player career stats recorded yet.</p>';
+      return;
+    }
+
+    let rows = '';
+    stats.forEach(p => {
+      const avg = p.matches > 0 ? (p.runs / p.matches).toFixed(1) : '0.0';
+      const sr = p.ballsFaced > 0 ? ((p.runs / p.ballsFaced) * 100).toFixed(1) : '0.0';
+
+      rows += `
+        <tr>
+          <td><strong>${p.name}</strong><br><span style="color:var(--text-muted); font-size:0.65rem;">${p.teamName}</span></td>
+          <td>${p.matches}</td>
+          <td><strong>${p.runs}</strong></td>
+          <td>${p.highestScore}</td>
+          <td>${avg}</td>
+          <td>${sr}</td>
+          <td>${p.fours}</td>
+          <td>${p.sixes}</td>
+          <td><strong>${p.wickets}</strong></td>
+        </tr>
+      `;
+    });
+
+    container.innerHTML = `
+      <div class="table-responsive">
+        <table class="stat-table">
+          <thead>
+            <tr>
+              <th>Player</th><th>Mat</th><th>Runs</th><th>HS</th><th>Avg</th><th>SR</th><th>4s</th><th>6s</th><th>Wkts</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  },
+
+  // BONUS 1: Trigger Cloud Backup
+  triggerCloudSync() {
+    const res = StorageManager.syncCloud();
+    alert(`☁️ ${res.message}
+Synced at: ${res.timestamp}`);
+  },
+
   editPlayerPrompt(teamId, playerId) {
     const teams = StorageManager.getTeams();
     const team = teams.find(t => t.id === teamId);
@@ -714,22 +788,12 @@ const App = {
     const newName = prompt('Edit player name:', player.name);
     if (newName === null) return;
     const trimmed = newName.trim();
-    if (!trimmed) {
-      alert('Player name cannot be empty.');
-      return;
-    }
+    if (!trimmed) return;
 
-    const roleOptions = ['Batter', 'Bowler', 'All-Rounder', 'Wicketkeeper'];
-    let newRole = prompt(`Edit role (Batter, Bowler, All-Rounder, Wicketkeeper):`, player.role);
-    if (newRole && roleOptions.includes(newRole.trim())) {
-      newRole = newRole.trim();
-    } else {
-      newRole = player.role;
-    }
-
-    StorageManager.updatePlayerInTeam(teamId, playerId, trimmed, newRole);
+    StorageManager.updatePlayerInTeam(teamId, playerId, trimmed, player.role);
     this.renderTeamsList();
     this.populateSetupTeams();
+    this.renderCareerStats();
   },
 
   removePlayerFromTeam(teamId, playerId) {
@@ -737,12 +801,12 @@ const App = {
     const team = teams.find(t => t.id === teamId);
     if (!team) return;
     const player = team.players.find(p => p.id === playerId);
-    if (!player) return;
 
     if (confirm(`Remove player "${player.name}" from ${team.name}?`)) {
       StorageManager.removePlayerFromTeam(teamId, playerId);
       this.renderTeamsList();
       this.populateSetupTeams();
+      this.renderCareerStats();
     }
   },
 
@@ -760,6 +824,7 @@ const App = {
       StorageManager.saveTeam(team);
       this.renderTeamsList();
       this.populateSetupTeams();
+      this.renderCareerStats();
     }
   },
 
@@ -768,10 +833,9 @@ const App = {
       StorageManager.deleteTeam(teamId);
       this.renderTeamsList();
       this.populateSetupTeams();
+      this.renderCareerStats();
     }
   },
-
-  // ==================== FULL SCORECARD RENDERING ====================
 
   renderFullScorecard() {
     const container = document.getElementById('scorecard-container');
@@ -862,38 +926,50 @@ const App = {
     });
   },
 
+  // BONUS 2: Shareable Scorecard via WhatsApp or System Web Share
   exportScorecard() {
     const match = this.engine.match;
-    let report = `🏏 CRICKET SCORECARD - ${match.venue}\n`;
-    report += `Date: ${match.date} | Format: ${match.totalOvers} Overs\n`;
-    if (match.result) report += `Result: ${match.result}\n\n`;
+    let report = `🏏 CRICKET SCORECARD - ${match.venue}
+`;
+    report += `Date: ${match.date} | Format: ${match.format || 'Custom'} (${match.totalOvers} Overs)
+`;
+    if (match.result) report += `Result: ${match.result}
+
+`;
 
     match.inningsList.forEach(inn => {
-      report += `--- ${inn.battingTeam.name} Innings (${inn.totalRuns}/${inn.totalWickets}, ${inn.oversNotation} Ov) ---\n`;
-      report += `Extras: ${inn.extras.total} (Wd: ${inn.extras.wides}, Nb: ${inn.extras.noBalls}, B: ${inn.extras.byes}, Lb: ${inn.extras.legByes})\n\n`;
-      report += `BATTERS:\n`;
+      report += `--- ${inn.battingTeam.name} Innings (${inn.totalRuns}/${inn.totalWickets}, ${inn.oversNotation} Ov) ---
+`;
+      report += `Extras: ${inn.extras.total} (Wd: ${inn.extras.wides}, Nb: ${inn.extras.noBalls}, B: ${inn.extras.byes}, Lb: ${inn.extras.legByes})
+
+`;
+      report += `BATTERS:
+`;
       Object.values(inn.batterStats).forEach(b => {
-        report += `${b.playerName}: ${b.runs} (${b.ballsFaced}b, 1s:${b.ones}, 2s:${b.twos}, 3s:${b.threes}, 4s:${b.fours}, 6s:${b.sixes}, SR:${b.strikeRate}) - ${b.isOut ? (b.bowlerName ? `${b.dismissalInfo} b ${b.bowlerName}` : b.dismissalInfo) : 'not out'}\n`;
+        report += `${b.playerName}: ${b.runs} (${b.ballsFaced}b, 1s:${b.ones}, 2s:${b.twos}, 3s:${b.threes}, 4s:${b.fours}, 6s:${b.sixes}, SR:${b.strikeRate}) - ${b.isOut ? (b.bowlerName ? `${b.dismissalInfo} b ${b.bowlerName}` : b.dismissalInfo) : 'not out'}
+`;
       });
-      report += `\nBOWLERS:\n`;
+      report += `
+BOWLERS:
+`;
       Object.values(inn.bowlerStats).forEach(b => {
-        report += `${b.playerName}: ${b.oversNotation} Ov (${b.legalBalls} balls), ${b.runsConceded} Runs, ${b.wickets} Wkts, ${b.wides} Wd, ${b.noBalls} Nb (Econ ${b.economyRate})\n`;
+        report += `${b.playerName}: ${b.oversNotation} Ov (${b.legalBalls} balls), ${b.runsConceded} Runs, ${b.wickets} Wkts, ${b.wides} Wd, ${b.noBalls} Nb (Econ ${b.economyRate})
+`;
       });
-      report += `\n`;
+      report += `
+`;
     });
 
-    if (navigator.clipboard) {
+    if (navigator.share) {
+      navigator.share({ title: 'Cricket Scorecard', text: report }).catch(() => {});
+    } else if (navigator.clipboard) {
       navigator.clipboard.writeText(report).then(() => {
         alert('Scorecard copied to clipboard! You can now paste and share it anywhere.');
-      }).catch(() => {
-        alert(report);
-      });
+      }).catch(() => { alert(report); });
     } else {
       alert(report);
     }
   },
-
-  // ==================== MATCH HISTORY ====================
 
   renderHistoryList() {
     const container = document.getElementById('history-list');
@@ -934,8 +1010,6 @@ const App = {
     }
   },
 
-  // ==================== PROFESSOR VIVA DEMO ====================
-
   triggerEdgeCaseDemo() {
     const consoleLog = document.getElementById('demo-console-log');
     consoleLog.textContent = '';
@@ -945,7 +1019,8 @@ const App = {
     EdgeCaseDemoRunner.runFullDemo(
       this.engine,
       (msg) => {
-        consoleLog.textContent += msg + '\n';
+        consoleLog.textContent += msg + '
+';
         consoleLog.scrollTop = consoleLog.scrollHeight;
         this.updateLiveUI();
       },

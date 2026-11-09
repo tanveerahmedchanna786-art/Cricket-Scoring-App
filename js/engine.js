@@ -1,13 +1,5 @@
 /**
  * engine.js - Automated Cricket Rule Engine & State Management (EF101-P02)
- *
- * Implements:
- * 1. Ball-by-ball scoring with legal ball verification (Wide/No-ball non-advancing).
- * 2. Automatic strike rotation on odd runs & end-of-over.
- * 3. Bowler validation (prevents consecutive overs by same bowler).
- * 4. Dismissal accounting & bowler credit rules (Bowled/Caught/LBW/Stumped vs Run-Out).
- * 5. Innings transition & automated match result calculation (overs, all out, or chase).
- * 6. Delivery-level Event Sourcing & complete 1-click Undo mechanism.
  */
 
 class CricketEngine {
@@ -20,7 +12,6 @@ class CricketEngine {
     this.onMatchEnded = null;
   }
 
-  // Initialize a new match with 1st innings
   startMatch({ strikerId, nonStrikerId, bowlerId }) {
     const isTeam1Batting = (this.match.electedTo === 'bat' && this.match.tossWinnerId === this.match.team1.id) ||
                            (this.match.electedTo === 'bowl' && this.match.tossWinnerId === this.match.team2.id);
@@ -47,7 +38,6 @@ class CricketEngine {
     this._notifyStateChange();
   }
 
-  // Start 2nd innings
   startSecondInnings({ strikerId, nonStrikerId, bowlerId }) {
     const firstInnings = this.match.inningsList[0];
     const target = firstInnings.totalRuns + 1;
@@ -101,7 +91,8 @@ class CricketEngine {
       extraType = 'none',
       isWicket = false,
       dismissalType = null,
-      dismissedPlayerId = innings.currentStrikerId
+      dismissedPlayerId = innings.currentStrikerId,
+      shotAngle = null
     } = event;
 
     const isLegalBall = (extraType !== 'wide' && extraType !== 'no_ball');
@@ -110,19 +101,15 @@ class CricketEngine {
     let runsOffBat = 0;
 
     if (extraType === 'wide') {
-      // Wide: 1 penalty + any additional runs (byes/boundary)
       extraRuns = 1 + runs;
-      runsOffBat = 0; // Batter does not get runs on wide
+      runsOffBat = 0;
     } else if (extraType === 'no_ball') {
-      // No-Ball: 1 penalty extra run + runs scored off bat
       extraRuns = 1;
       runsOffBat = runs;
     } else if (extraType === 'bye' || extraType === 'leg_bye') {
-      // Byes / Leg-Byes: all runs are extras, 0 off the bat
       extraRuns = runs;
       runsOffBat = 0;
     } else {
-      // Normal delivery
       extraRuns = 0;
       runsOffBat = runs;
     }
@@ -151,14 +138,13 @@ class CricketEngine {
       isWicket,
       dismissalType,
       dismissedPlayerId,
-      bowlerCredited
+      bowlerCredited,
+      shotAngle
     });
 
     innings.deliveries.push(delivery);
     this._recomputeInningsState(innings);
 
-    // Strike swap logic:
-    // Odd completed runs require strike change (unless wicket without crossing)
     const physicalRunsRan = runs;
     if (physicalRunsRan % 2 !== 0 && !isWicket) {
       this._swapStrike(innings);
@@ -225,7 +211,6 @@ class CricketEngine {
 
       const batter = innings.batterStats[del.strikerId];
       if (batter) {
-        // Wide does not count as ball faced, but legal balls and no-balls do
         if (del.extraType !== 'wide') {
           batter.ballsFaced += 1;
         }
@@ -242,15 +227,14 @@ class CricketEngine {
         if (del.isLegalBall) {
           bowler.legalBalls += 1;
         }
-        let runsCharged = del.runsScored; // runs off bat (0 for wide/bye/leg_bye)
+        let runsCharged = del.runsScored;
         if (del.extraType === 'wide') {
-          runsCharged += del.extraRuns; // 1 + runs
+          runsCharged += del.extraRuns;
           bowler.wides += 1;
         } else if (del.extraType === 'no_ball') {
-          runsCharged += del.extraRuns; // 1 penalty
+          runsCharged += del.extraRuns;
           bowler.noBalls += 1;
         }
-        // Byes & Leg-byes: del.runsScored is 0, del.extraRuns is not charged to bowler!
         bowler.runsConceded += runsCharged;
 
         if (del.isWicket && del.bowlerCredited) {

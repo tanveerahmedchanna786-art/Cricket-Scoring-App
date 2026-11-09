@@ -1,7 +1,5 @@
 /**
  * models.js - Core Entities for Cricket Scoring Application (EF101-P02)
- * Strictly follows the required entity architecture:
- * Team, Player, Match, Innings, BatterInnings, BowlerSpell, Delivery/Event.
  */
 
 class Player {
@@ -51,13 +49,14 @@ class Delivery {
     nonStrikerId,
     bowlerId,
     runsScored = 0,
-    extraType = 'none', // 'none' | 'wide' | 'no_ball' | 'bye' | 'leg_bye'
+    extraType = 'none',
     extraRuns = 0,
     isLegalBall = true,
     isWicket = false,
-    dismissalType = null, // 'bowled' | 'caught' | 'lbw' | 'stumped' | 'run_out' | 'hit_wicket'
+    dismissalType = null,
     dismissedPlayerId = null,
     bowlerCredited = false,
+    shotAngle = null, // angle in degrees for wagon wheel
     notes = ''
   }) {
     this.id = 'del_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -75,6 +74,7 @@ class Delivery {
     this.dismissalType = dismissalType;
     this.dismissedPlayerId = dismissedPlayerId;
     this.bowlerCredited = bowlerCredited;
+    this.shotAngle = shotAngle;
     this.notes = notes;
     this.timestamp = Date.now();
   }
@@ -163,14 +163,7 @@ class Innings {
     this.isCompleted = false;
     this.completionReason = '';
 
-    this.extras = {
-      wides: 0,
-      noBalls: 0,
-      byes: 0,
-      legByes: 0,
-      total: 0
-    };
-
+    this.extras = { wides: 0, noBalls: 0, byes: 0, legByes: 0, total: 0 };
     this.currentStrikerId = null;
     this.currentNonStrikerId = null;
     this.currentBowlerId = null;
@@ -201,6 +194,7 @@ class Match {
     date = new Date().toISOString().split('T')[0],
     venue = 'National Stadium',
     totalOvers = 5,
+    format = 'Custom',
     team1,
     team2,
     tossWinnerId,
@@ -211,6 +205,7 @@ class Match {
     this.date = date;
     this.venue = venue;
     this.totalOvers = parseInt(totalOvers, 10) || 5;
+    this.format = format;
     this.team1 = team1;
     this.team2 = team2;
     this.tossWinnerId = tossWinnerId;
