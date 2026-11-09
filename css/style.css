@@ -1,10 +1,9 @@
-/* style.css - Modern Material 3 Mobile Cricket Scoring App */
+/* style.css - Material 3 Mobile Cricket Scoring App */
 
 :root {
   --bg-dark: #0a0f18;
   --surface: #141d2b;
   --surface-light: #1e2c40;
-  --surface-card: #192538;
   --primary: #00e676;
   --primary-dark: #00b359;
   --primary-glow: rgba(0, 230, 118, 0.25);
@@ -68,9 +67,7 @@ body {
   gap: 8px;
 }
 
-.brand-icon {
-  font-size: 1.4rem;
-}
+.brand-icon { font-size: 1.4rem; }
 
 .brand-title {
   font-size: 1.1rem;
@@ -105,7 +102,7 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .icon-btn:hover {
@@ -134,11 +131,12 @@ body {
   cursor: pointer;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .nav-item.active, .nav-item:hover {
   color: var(--primary);
+  transform: translateY(-2px);
 }
 
 .screen-container {
@@ -158,6 +156,12 @@ body {
 
 .screen.active {
   display: flex;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .score-card {
@@ -168,17 +172,6 @@ body {
   position: relative;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-.score-card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 90px;
-  height: 90px;
-  background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
-  pointer-events: none;
 }
 
 .match-status-bar {
@@ -193,12 +186,9 @@ body {
 .teams-vs {
   font-weight: 700;
   color: var(--text-main);
-  letter-spacing: 0.4px;
 }
 
-.match-venue {
-  color: var(--info);
-}
+.match-venue { color: var(--info); }
 
 .primary-score-display {
   display: flex;
@@ -237,10 +227,6 @@ body {
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   font-size: 0.78rem;
-}
-
-.rr-item {
-  color: var(--text-muted);
 }
 
 .rr-item strong {
@@ -298,7 +284,6 @@ body {
 .dot-4 { background: #40c4ff; }
 .dot-6 { background: #ff5252; }
 
-/* Shot direction grid modal */
 .shot-direction-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -315,6 +300,7 @@ body {
   font-size: 0.8rem;
   cursor: pointer;
   font-weight: 600;
+  transition: all 0.2s ease;
 }
 
 .shot-btn:hover {
@@ -322,7 +308,6 @@ body {
   color: #000;
 }
 
-/* Over Pill Strip */
 .over-strip-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -362,6 +347,7 @@ body {
   font-weight: 700;
   color: var(--text-main);
   flex-shrink: 0;
+  transition: transform 0.15s ease;
 }
 
 .ball-pill.pill-wicket { background: var(--danger); color: #fff; }
@@ -457,6 +443,11 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  transition: all 0.12s ease;
+}
+
+.keypad-btn:active {
+  transform: scale(0.93);
 }
 
 .keypad-btn.btn-run { background: #1e3048; }
@@ -498,6 +489,12 @@ body {
   justify-content: center;
   align-items: center;
   gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #00c864;
+  box-shadow: 0 4px 16px var(--primary-glow);
 }
 
 .btn-secondary {
@@ -526,7 +523,10 @@ body {
   z-index: 100;
 }
 
-.modal-overlay.active { display: flex; }
+.modal-overlay.active {
+  display: flex;
+  animation: fadeIn 0.2s ease-out;
+}
 
 .modal-content {
   background: var(--surface);
@@ -555,6 +555,7 @@ body {
 .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; }
 
 .dismissal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
 .dismissal-btn {
   background: var(--surface-light);
   border: 1px solid var(--border);
@@ -566,6 +567,7 @@ body {
   cursor: pointer;
   text-align: center;
 }
+
 .dismissal-btn.selected { background: var(--danger); border-color: var(--danger); color: #fff; }
 
 .demo-console {
