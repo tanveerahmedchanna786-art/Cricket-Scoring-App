@@ -47,19 +47,19 @@ const EdgeCaseDemoRunner = {
       engine.processDelivery({ runs: 1, extraType: 'none' });
       await sleep(1200);
 
-      log('👉 Case 2: Ball 2 -> Bowler bowls a WIDE. Score increases by 1, but over stays at 0.1.');
+      log('👉 Case 2: Ball 2 -> Bowler bowls a WIDE. Score increases by 1, over stays at 0.1.');
       engine.processDelivery({ runs: 0, extraType: 'wide' });
       await sleep(1200);
 
-      log('👉 Case 3: Ball 2 -> Bowler bowls a NO-BALL + 2 runs. Total +3 runs. Over still stays at 0.1!');
+      log('👉 Case 3: Ball 2 -> Bowler bowls NO-BALL + 2 runs. Total +3 runs. Over stays at 0.1!');
       engine.processDelivery({ runs: 2, extraType: 'no_ball' });
       await sleep(1200);
 
-      log('👉 Case 4: Ball 2 -> Batter hits a FOUR (4) [Point Angle 45°]. Over advances to 0.2.');
+      log('👉 Case 4: Ball 2 -> Batter hits a FOUR (4) [Cover Point 45°]. Over advances to 0.2.');
       engine.processDelivery({ runs: 4, extraType: 'none', shotAngle: 45 });
       await sleep(1200);
 
-      log('👉 Case 5: Ball 3 -> Batter hits a SIX (6) [Long-On Angle 180°]. Over advances to 0.3.');
+      log('👉 Case 5: Ball 3 -> Batter hits a SIX (6) [Long-On 180°]. Over advances to 0.3.');
       engine.processDelivery({ runs: 6, extraType: 'none', shotAngle: 180 });
       await sleep(1200);
 

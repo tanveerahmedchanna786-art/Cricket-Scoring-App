@@ -124,7 +124,6 @@ const StorageManager = {
     } catch (e) {}
   },
 
-  // BONUS 1: Cloud Sync Backup Simulation
   syncCloud() {
     const payload = {
       teams: this.getTeams(),
@@ -134,7 +133,6 @@ const StorageManager = {
     return { success: true, message: "Data backed up to Cloud DB successfully!", timestamp: payload.syncedAt };
   },
 
-  // BONUS 3: Career Player Statistics Aggregator
   getCareerStats() {
     const teams = this.getTeams();
     const matches = this.getCompletedMatches();

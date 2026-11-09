@@ -160,7 +160,6 @@ const App = {
     if (btnDemo) btnDemo.addEventListener('click', () => this.openModal('modal-demo'));
   },
 
-  // BONUS 6: Match Formats Selector
   handleFormatChange() {
     const format = document.getElementById('setup-format').value;
     const oversInput = document.getElementById('setup-overs');
@@ -305,7 +304,6 @@ const App = {
     }
   },
 
-  // BONUS 4: Wagon Wheel Visualization Renderer
   renderWagonWheel(inn) {
     const group = document.getElementById('wagon-shots-group');
     const countEl = document.getElementById('wagon-wheel-count');
@@ -545,7 +543,6 @@ const App = {
     this.openModal('modal-match-finish');
   },
 
-  // BONUS 5: Duckworth-Lewis-Stern Target Calculator Modal
   openDlsModal() {
     const inn1 = this.engine.match.inningsList[0];
     if (inn1) {
@@ -724,7 +721,6 @@ const App = {
     });
   },
 
-  // BONUS 3: Render Career Stats View
   renderCareerStats() {
     const container = document.getElementById('career-stats-container');
     if (!container) return;
@@ -771,11 +767,9 @@ const App = {
     `;
   },
 
-  // BONUS 1: Trigger Cloud Backup
   triggerCloudSync() {
     const res = StorageManager.syncCloud();
-    alert(`☁️ ${res.message}
-Synced at: ${res.timestamp}`);
+    alert(`☁️ ${res.message}\nSynced at: ${res.timestamp}`);
   },
 
   editPlayerPrompt(teamId, playerId) {
@@ -926,38 +920,24 @@ Synced at: ${res.timestamp}`);
     });
   },
 
-  // BONUS 2: Shareable Scorecard via WhatsApp or System Web Share
   exportScorecard() {
     const match = this.engine.match;
-    let report = `🏏 CRICKET SCORECARD - ${match.venue}
-`;
-    report += `Date: ${match.date} | Format: ${match.format || 'Custom'} (${match.totalOvers} Overs)
-`;
-    if (match.result) report += `Result: ${match.result}
-
-`;
+    let report = `🏏 CRICKET SCORECARD - ${match.venue}\n`;
+    report += `Date: ${match.date} | Format: ${match.format || 'Custom'} (${match.totalOvers} Overs)\n`;
+    if (match.result) report += `Result: ${match.result}\n\n`;
 
     match.inningsList.forEach(inn => {
-      report += `--- ${inn.battingTeam.name} Innings (${inn.totalRuns}/${inn.totalWickets}, ${inn.oversNotation} Ov) ---
-`;
-      report += `Extras: ${inn.extras.total} (Wd: ${inn.extras.wides}, Nb: ${inn.extras.noBalls}, B: ${inn.extras.byes}, Lb: ${inn.extras.legByes})
-
-`;
-      report += `BATTERS:
-`;
+      report += `--- ${inn.battingTeam.name} Innings (${inn.totalRuns}/${inn.totalWickets}, ${inn.oversNotation} Ov) ---\n`;
+      report += `Extras: ${inn.extras.total} (Wd: ${inn.extras.wides}, Nb: ${inn.extras.noBalls}, B: ${inn.extras.byes}, Lb: ${inn.extras.legByes})\n\n`;
+      report += `BATTERS:\n`;
       Object.values(inn.batterStats).forEach(b => {
-        report += `${b.playerName}: ${b.runs} (${b.ballsFaced}b, 1s:${b.ones}, 2s:${b.twos}, 3s:${b.threes}, 4s:${b.fours}, 6s:${b.sixes}, SR:${b.strikeRate}) - ${b.isOut ? (b.bowlerName ? `${b.dismissalInfo} b ${b.bowlerName}` : b.dismissalInfo) : 'not out'}
-`;
+        report += `${b.playerName}: ${b.runs} (${b.ballsFaced}b, 1s:${b.ones}, 2s:${b.twos}, 3s:${b.threes}, 4s:${b.fours}, 6s:${b.sixes}, SR:${b.strikeRate}) - ${b.isOut ? (b.bowlerName ? `${b.dismissalInfo} b ${b.bowlerName}` : b.dismissalInfo) : 'not out'}\n`;
       });
-      report += `
-BOWLERS:
-`;
+      report += `\nBOWLERS:\n`;
       Object.values(inn.bowlerStats).forEach(b => {
-        report += `${b.playerName}: ${b.oversNotation} Ov (${b.legalBalls} balls), ${b.runsConceded} Runs, ${b.wickets} Wkts, ${b.wides} Wd, ${b.noBalls} Nb (Econ ${b.economyRate})
-`;
+        report += `${b.playerName}: ${b.oversNotation} Ov (${b.legalBalls} balls), ${b.runsConceded} Runs, ${b.wickets} Wkts, ${b.wides} Wd, ${b.noBalls} Nb (Econ ${b.economyRate})\n`;
       });
-      report += `
-`;
+      report += `\n`;
     });
 
     if (navigator.share) {
@@ -1019,8 +999,7 @@ BOWLERS:
     EdgeCaseDemoRunner.runFullDemo(
       this.engine,
       (msg) => {
-        consoleLog.textContent += msg + '
-';
+        consoleLog.textContent += msg + '\n';
         consoleLog.scrollTop = consoleLog.scrollHeight;
         this.updateLiveUI();
       },
@@ -1047,7 +1026,6 @@ BOWLERS:
 
 window.App = App;
 
-window.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
   App.init();
 });
-

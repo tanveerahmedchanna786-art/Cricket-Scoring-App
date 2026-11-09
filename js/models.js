@@ -56,7 +56,7 @@ class Delivery {
     dismissalType = null,
     dismissedPlayerId = null,
     bowlerCredited = false,
-    shotAngle = null, // angle in degrees for wagon wheel
+    shotAngle = null,
     notes = ''
   }) {
     this.id = 'del_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
@@ -147,12 +147,7 @@ class BowlerSpell {
 }
 
 class Innings {
-  constructor({
-    inningsNumber = 1,
-    battingTeam,
-    bowlingTeam,
-    target = null
-  }) {
+  constructor({ inningsNumber = 1, battingTeam, bowlingTeam, target = null }) {
     this.inningsNumber = inningsNumber;
     this.battingTeam = battingTeam;
     this.bowlingTeam = bowlingTeam;

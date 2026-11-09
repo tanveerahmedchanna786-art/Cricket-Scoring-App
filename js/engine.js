@@ -83,7 +83,7 @@ class CricketEngine {
   processDelivery(event) {
     const innings = this.match.getCurrentInnings();
     if (!innings || innings.isCompleted || this.match.status === 'completed') {
-      return { success: false, message: 'Match has already concluded. No further scoring allowed.' };
+      return { success: false, message: 'Match has already concluded.' };
     }
 
     const {
@@ -273,7 +273,7 @@ class CricketEngine {
     if (bowlerId === innings.previousBowlerId && innings.bowlingTeam.players.length > 1) {
       return {
         success: false,
-        message: 'Cricket Rule Violation: A bowler cannot bowl two consecutive overs.'
+        message: 'Cricket Rule Violation: Bowler cannot bowl two consecutive overs.'
       };
     }
 
