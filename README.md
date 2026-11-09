@@ -70,7 +70,7 @@ This application is a **100% offline, event-driven cricket match scoring mobile 
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Why a Delivery-Level Record is Useful (Viva Core Question)
+### Why a Delivery-Level Record is Useful
 Traditional counters (e.g., `totalRuns += 4`) cause catastrophic data loss: you cannot reconstruct how an innings unfolded, cannot undo a scoring mistake without corrupted state, and cannot verify maiden overs or wagon wheels.
 
 By treating each ball as an immutable **`Delivery`** event:
